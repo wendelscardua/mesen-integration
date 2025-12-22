@@ -48,6 +48,7 @@ target_sources(${CMAKE_PROJECT_NAME}
 set(public_headers
     src/mesen-integration.hpp
 )
+
 # note that ${public_headers} has to be in quotes
 set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${public_headers}")
 
@@ -102,4 +103,10 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
     DESTINATION cmake
+)
+
+# install script
+install(FILES
+    scripts/mesen-integration.lua
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}
 )
