@@ -40,14 +40,16 @@ add_link_options(
 
 add_library(${CMAKE_PROJECT_NAME})
 
+set(public_headers
+    include/mesen-integration.hpp
+)
+
 target_sources(${CMAKE_PROJECT_NAME} 
   PRIVATE
     src/mesen-integration.cpp
 )
 
-set(public_headers
-    src/mesen-integration.hpp
-)
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 # note that ${public_headers} has to be in quotes
 set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${public_headers}")
@@ -113,7 +115,7 @@ install(FILES
 
 # packaging
 
-set(package_files src/ CMakeLists.txt Config.cmake.in LICENSE)
+set(package_files src/ include/ CMakeLists.txt Config.cmake.in LICENSE)
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-src.zip
     COMMAND ${CMAKE_COMMAND} -E tar c ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-src.zip --format=zip -- ${package_files}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
