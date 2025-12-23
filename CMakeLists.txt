@@ -14,7 +14,7 @@ set(LLVM_MOS_PLATFORM nes-nrom)
 find_package(llvm-mos-sdk REQUIRED)
 
 project(mesen-integration CXX ASM)
-set(version 0.1.1)
+set(version 0.1.2)
 set(namespace scarduadev)
 
 add_compile_options(
