@@ -113,7 +113,7 @@ install(FILES
 
 # packaging
 
-set(package_files src/ CMakeLists.txt LICENSE)
+set(package_files src/ CMakeLists.txt Config.cmake.in LICENSE)
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-src.zip
     COMMAND ${CMAKE_COMMAND} -E tar c ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-src.zip --format=zip -- ${package_files}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
