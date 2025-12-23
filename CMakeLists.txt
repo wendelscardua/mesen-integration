@@ -35,24 +35,24 @@ add_link_options(
 
   # --lto-whole-program-visibility helps ensure clang does as many
   # optimizations as possible
-  -Wl,-Map,${CMAKE_PROJECT_NAME}.map,--lto-whole-program-visibility
+  -Wl,-Map,${PROJECT_NAME}.map,--lto-whole-program-visibility
 )
 
-add_library(${CMAKE_PROJECT_NAME})
+add_library(${PROJECT_NAME})
 
 set(public_headers
     include/mesen-integration.hpp
 )
 
-target_sources(${CMAKE_PROJECT_NAME} 
+target_sources(${PROJECT_NAME} 
   PRIVATE
     src/mesen-integration.cpp
 )
 
-target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
 # note that ${public_headers} has to be in quotes
-set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${public_headers}")
+set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${public_headers}")
 
 if(DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     message(
@@ -75,14 +75,14 @@ endif()
 
 include(GNUInstallDirs)
 
-install(TARGETS ${CMAKE_PROJECT_NAME}
-    EXPORT "${CMAKE_PROJECT_NAME}Targets"
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME} # include/SomeLibrary
+install(TARGETS ${PROJECT_NAME}
+    EXPORT "${PROJECT_NAME}Targets"
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME} # include/SomeLibrary
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
 )
 
-install(EXPORT "${CMAKE_PROJECT_NAME}Targets"
-    FILE "${CMAKE_PROJECT_NAME}Targets.cmake"
+install(EXPORT "${PROJECT_NAME}Targets"
+    FILE "${PROJECT_NAME}Targets.cmake"
     NAMESPACE ${namespace}::
     DESTINATION cmake
 )
@@ -110,14 +110,14 @@ install(FILES
 # install script
 install(FILES
     scripts/mesen-integration.lua
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}
 )
 
 # packaging
 
 set(package_files src/ include/ CMakeLists.txt Config.cmake.in LICENSE)
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-src.zip
-    COMMAND ${CMAKE_COMMAND} -E tar c ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-src.zip --format=zip -- ${package_files}
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-src.zip
+    COMMAND ${CMAKE_COMMAND} -E tar c ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-src.zip --format=zip -- ${package_files}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${package_files})
-add_custom_target(${CMAKE_PROJECT_NAME}-package DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-src.zip)
+add_custom_target(${PROJECT_NAME}-package DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-src.zip)
