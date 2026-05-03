@@ -27,3 +27,13 @@ void stop_mesen_watch(const char *addr) {
   POKE(0x4021, address & 0xFF);
 }
 void break_mesen(unsigned char label) { POKE(0x4019, label); }
+void mesen_data_watch(const char *label, unsigned char value_size,
+                      const void *value_address) {
+  unsigned short short_label_address = (unsigned short)(uintptr_t)label;
+  unsigned short short_value_address = (unsigned short)(uintptr_t)value_address;
+  POKE(0x4022, (short_label_address >> 8) & 0xFF);
+  POKE(0x4022, short_label_address & 0xFF);
+  POKE(0x4023, value_size);
+  POKE(0x4024, (short_value_address >> 8) & 0xFF);
+  POKE(0x4024, short_value_address & 0xFF);
+}

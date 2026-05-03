@@ -3,12 +3,21 @@ str = ""
 watch_table = {
   children = {}
 }
+
 current_watch = {}
 label_stack = {}
 label_latch = false
 label_address = 0
 
-display_toggle = 0  -- 0: no display, 1: less transparent, 2: more transparent
+data_table = {}
+data_latch = 0
+data_address = 0
+data_label = ""
+data_size = 0
+
+-- 0: no display, 1: less visible watches, 2: more visible watches
+-- 3: less visible data, 4: more visible data
+display_toggle = 0 
 left_mouse_prev_state = false
 
 frame_start_cycle = 0
@@ -157,11 +166,11 @@ function recursive_display(subtable, x, y, width)
   return rect.height + 1
 end
 
-function display_times()
+function display_stuff()
   left_mouse_state = emu.getMouseState().left
   if left_mouse_state ~= left_mouse_prev_state then
     if left_mouse_state then
-      display_toggle = (display_toggle + 1) % 3
+      display_toggle = (display_toggle + 1) % 5
     end
     left_mouse_prev_state = left_mouse_state
   end
@@ -170,25 +179,30 @@ function display_times()
     return
   end
 
-  display_stack = {}
-  recursive_display(watch_table, 4, 4, 112)
-
-  while #display_stack ~= 0 do
-    rect = table.remove(display_stack)
-    if display_toggle == 1 then
-      -- Less transparent (more contrasting)
-      bgColor = 0xf02060FF
-      fgColor = 0xf0FF4040
-    elseif display_toggle == 2 then
-      -- More transparent (less contrasting)
-      bgColor = 0x802060FF
-      fgColor = 0x80FF4040
+  if display_toggle == 1 or display_toggle == 2 then
+    display_stack = {}
+    recursive_display(watch_table, 4, 4, 112)
+  
+    while #display_stack ~= 0 do
+      rect = table.remove(display_stack)
+      if display_toggle == 1 then
+        -- Less transparent (more contrasting)
+        bgColor = 0xf02060FF
+        fgColor = 0xf0FF4040
+      elseif display_toggle == 2 then
+        -- More transparent (less contrasting)
+        bgColor = 0x802060FF
+        fgColor = 0x80FF4040
+      end
+      emu.drawRectangle(rect.x, rect.y, rect.width, rect.height, bgColor, true, 1)
+      emu.drawRectangle(rect.x, rect.y, rect.width, rect.height, fgColor, false, 1)
+      if rect.label ~= nil then
+        emu.drawString(rect.x + 2, rect.y + 1, rect.label, 0x30FFFFFF, 0xFF000000)
+      end
     end
-    emu.drawRectangle(rect.x, rect.y, rect.width, rect.height, bgColor, true, 1)
-    emu.drawRectangle(rect.x, rect.y, rect.width, rect.height, fgColor, false, 1)
-    if rect.label ~= nil then
-      emu.drawString(rect.x + 2, rect.y + 1, rect.label, 0x30FFFFFF, 0xFF000000)
-    end
+  end
+  if display_toggle == 3 or display_toggle == 4 then
+    display_data(4, 4, 112)
   end
 end
 
@@ -197,10 +211,79 @@ function break_point(_address, value)
 	emu.breakExecution()
 end
 
+function data_watch_cb(_address, label_byte)
+  if data_latch == 0 then -- read label address high byte
+    data_latch = 1
+    data_address = label_byte
+    return
+  elseif data_latch == 1 then -- read label address low byte
+    data_latch = 2
+    data_address = data_address * 256 + label_byte
+    data_label = ""
+    while true do
+      local byte = emu.read(data_address, emu.memType.nesMemory, false)
+      if byte == 0 then
+        break
+      end
+      data_label = data_label .. string.char(byte)
+      data_address = data_address + 1
+    end
+    return
+  elseif data_latch == 2 then -- read data size
+    data_latch = 3
+    data_size = label_byte
+    return
+  elseif data_latch == 3 then -- read data address high byte
+    data_latch = 4
+    data_address = label_byte
+    return
+  elseif data_latch == 4 then -- read data address low byte
+    data_latch = 0
+    data_address = data_address * 256 + label_byte
+    data_value = 0
+    for i = 0, data_size - 1 do
+      data_value = data_value * 256 + emu.read(data_address + i, emu.memType.nesMemory, false)
+    end
+    data_table[data_label] = data_value
+    return
+  end
+end
+
+function display_data(x, y, width)
+  row_height = 10
+
+  if display_toggle == 3 then
+    -- Less transparent (more contrasting)
+    bgColor = 0xf02060FF
+    fgColor = 0xf0FF4040
+  elseif display_toggle == 4 then
+    -- More transparent (less contrasting)
+    bgColor = 0x802060FF
+    fgColor = 0x80FF4040
+  end
+
+  num_entries = 0
+  for label, _ in pairs(data_table) do
+    num_entries = num_entries + 1
+  end
+
+  emu.drawRectangle(x, y, width, num_entries * row_height, bgColor, true, 1)
+  emu.drawRectangle(x, y, width, num_entries * row_height, fgColor, false, 1)
+
+  text_x = x + 2
+  text_y = y + 1
+
+  for label, value in pairs(data_table) do
+    emu.drawString(text_x, text_y, label .. ": " .. string.format("%x", value), 0x30FFFFFF, 0xFF000000)
+    text_y = text_y + row_height
+  end
+end
+
 emu.addMemoryCallback(putchar_cb, emu.callbackType.write, 0x4018)
 emu.addMemoryCallback(putchar_cb, emu.callbackType.write, 0x401b)
 emu.addMemoryCallback(break_point, emu.callbackType.write, 0x4019)
 emu.addMemoryCallback(start_watch, emu.callbackType.write, 0x4020)
 emu.addMemoryCallback(stop_watch, emu.callbackType.write, 0x4021)
-emu.addEventCallback(display_times, emu.eventType.endFrame);
+emu.addMemoryCallback(data_watch_cb, emu.callbackType.write, 0x4022)
+emu.addEventCallback(display_stuff, emu.eventType.endFrame);
 emu.addEventCallback(get_start_frame_cycle_count, emu.eventType.startFrame);
